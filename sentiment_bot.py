@@ -67,8 +67,12 @@ while 1:
             target = text.split(' ')[-1]
             if target.startswith('@'):
                 print('checking', target)
-                response = client.get_user(username=target[1:])
-                target_id = response['data']['id']
-                target_tweets = client.get_users_tweets(target_id, exclude='retweets', max_results=100) # limited to 100??
-                scores = average_sentiment_scores(target_tweets)
-                response = client.create_tweet(text=f"boop beep...\n{target}'s recent tweets are\n{round(scores[0]*100)}% NEGATIVE 😡\n{round(scores[1]*100)}% NEUTRAL 😐\n{round(scores[2]*100)}% POSITIVE 😀", in_reply_to_tweet_id=tweet['id']) 
+                try:
+                    response = client.get_user(username=target[1:])
+                    target_id = response['data']['id']
+                    target_name = response['data']['name']
+                    target_tweets = client.get_users_tweets(target_id, exclude='retweets', max_results=100) # limited to 100??
+                    scores = average_sentiment_scores(target_tweets)
+                    response = client.create_tweet(text=f"boop beep...\n{target_name}({target})'s recent tweets are\n{round(scores[0]*100)}% NEGATIVE 😡\n{round(scores[1]*100)}% NEUTRAL 😐\n{round(scores[2]*100)}% POSITIVE 😀", in_reply_to_tweet_id=tweet['id']) 
+                except:
+                    response = client.create_tweet(text=f"boop BONK...\nHad an error processing {target}", in_reply_to_tweet_id=tweet['id']) 
