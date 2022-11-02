@@ -3,11 +3,12 @@
 import numpy as np
 import pickle
 from scipy.special import softmax
-from time import sleep
+from time import sleep, time
 from transformers import AutoConfig, AutoTokenizer, AutoModelForSequenceClassification
 import tweepy
 
 from SECRETS import *
+
 
 SENTIMENT_MODEL = "cardiffnlp/twitter-roberta-base-sentiment-latest"
 sentiment_tokenizer = AutoTokenizer.from_pretrained(SENTIMENT_MODEL)
@@ -22,6 +23,7 @@ client = tweepy.Client(
   consumer_key=API_KEY,
   consumer_secret=API_KEY_SECRET,
   return_type=dict)
+
 
 def preprocess_tweet(text):
     new_text = []
@@ -52,9 +54,14 @@ def average_sentiment_scores(tweets):
 try: newest_tweet_id = pickle.load(open('newest_tweet_id.pkl', 'rb'))
 except: newest_tweet_id = None
 
-
+last_check_times = {}
 while 1:
-    new_tweets = client.get_users_mentions(BIBLIEST_USER_ID, since_id=newest_tweet_id)
+    try:
+        new_tweets = client.get_users_mentions(BIBLIEST_USER_ID, since_id=newest_tweet_id)
+    except:
+        # Hope this is a transient error, wait and try again.
+        sleep(30)
+        continue
     print(new_tweets)
     if new_tweets['meta']['result_count'] == 0:
         sleep(10)
@@ -67,6 +74,10 @@ while 1:
             target = text.split(' ')[-1]
             if target.startswith('@'):
                 print('checking', target)
+                if target in last_check_times and (time() - last_check_times[target]) < 3600:
+                    response = client.create_tweet(text=f"boop BLIK...\nRecently checked {target}, please wait a little", in_reply_to_tweet_id=tweet['id']) 
+                    continue
+                last_check_times[target] = time()
                 try:
                     response = client.get_user(username=target[1:])
                     target_id = response['data']['id']
