@@ -1,2 +1,2 @@
 # sentiment_bot
-A twitter sentiment bot
+A twitter sentiment bot: see https://twitter.com/bibliest
